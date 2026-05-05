@@ -70,23 +70,27 @@ export default function CustomerOrdersPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>;
+    return <div className="page-frame flex min-h-screen items-center justify-center text-slate-500">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen pb-10">
       <Navbar />
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">My Orders</h1>
+      <div className="page-frame py-8">
+        <div className="hero-panel mb-8 flex flex-col gap-3">
+          <span className="section-kicker">Order timeline</span>
+          <h1 className="page-title">My orders</h1>
+          <p className="page-subtitle">Track the progress of every order from acceptance to pickup.</p>
+        </div>
 
         {fetching ? (
-          <div className="text-gray-500 text-center py-12">Loading orders...</div>
+          <div className="hero-panel py-16 text-center text-slate-500">Loading orders...</div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 mb-4">No orders yet</p>
+          <div className="hero-panel py-16 text-center">
+            <p className="mb-4 text-slate-500">No orders yet</p>
             <button
               onClick={() => router.push("/customer")}
-              className="text-green-600 hover:underline"
+              className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5"
             >
               Browse shops and place your first order
             </button>
@@ -94,12 +98,12 @@ export default function CustomerOrdersPage() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <Card key={order.id}>
-                <CardHeader className="pb-2">
+              <Card key={order.id} className="border-white/70 bg-white/75">
+                <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div>
-                      <CardTitle className="text-base">{order.shop.name}</CardTitle>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <CardTitle className="text-lg text-slate-950">{order.shop.name}</CardTitle>
+                      <p className="mt-1 text-xs text-slate-400">
                         {new Date(order.createdAt).toLocaleString("en-IN")}
                       </p>
                     </div>
@@ -120,11 +124,11 @@ export default function CustomerOrdersPage() {
                     ))}
                   </div>
                   {order.notes && (
-                    <p className="text-xs text-gray-400 mt-2 italic">Note: {order.notes}</p>
+                    <p className="mt-2 text-xs italic text-slate-400">Note: {order.notes}</p>
                   )}
                   <div className="flex justify-between items-center mt-3 pt-3 border-t">
-                    <span className="font-medium text-sm">Total</span>
-                    <span className="font-bold text-green-700">₹{order.totalAmount}</span>
+                    <span className="text-sm font-medium text-slate-600">Total</span>
+                    <span className="font-bold text-emerald-700">₹{order.totalAmount}</span>
                   </div>
                 </CardContent>
               </Card>

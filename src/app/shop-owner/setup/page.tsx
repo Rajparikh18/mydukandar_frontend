@@ -61,24 +61,28 @@ export default function ShopSetupPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>;
+    return <div className="page-frame flex min-h-screen items-center justify-center text-slate-500">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen pb-10">
       <Navbar />
-      <div className="max-w-lg mx-auto px-4 py-10">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="text-4xl mb-2">🏪</div>
-            <CardTitle className="text-xl">Set Up Your Shop</CardTitle>
-            <p className="text-sm text-gray-500">Fill in the details to create your digital dukan</p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg">{error}</div>
-              )}
+      <div className="page-frame py-10">
+        <div className="mx-auto max-w-2xl">
+          <div className="hero-panel mb-6 flex flex-col gap-3">
+            <span className="section-kicker">Shop setup</span>
+            <h1 className="page-title">Create your digital storefront.</h1>
+            <p className="page-subtitle">Complete your shop profile so customers can discover and order from you.</p>
+          </div>
+          <Card className="border-white/70 bg-white/80 shadow-none backdrop-blur-xl">
+            <CardHeader className="text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-500 text-3xl shadow-lg shadow-emerald-500/20">🏪</div>
+              <CardTitle className="mt-4 text-2xl">Set Up Your Shop</CardTitle>
+              <p className="text-sm text-slate-500">Fill in the details to create your digital dukan</p>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
 
               <div>
                 <Label htmlFor="name">Shop Name *</Label>
@@ -160,16 +164,13 @@ export default function ShopSetupPage() {
                 />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={submitting}
-              >
-                {submitting ? "Creating..." : "Create Shop"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                <Button type="submit" className="w-full" disabled={submitting}>
+                  {submitting ? "Creating..." : "Create Shop"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

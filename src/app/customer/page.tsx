@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -57,56 +58,63 @@ export default function CustomerPage() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>;
+    return <div className="page-frame flex min-h-screen items-center justify-center text-slate-500">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen pb-10">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Find Shops Near You</h1>
-        <p className="text-gray-500 mb-6">Search for your trusted local shops and order in advance</p>
-
-        <form onSubmit={handleSearch} className="flex gap-2 mb-8">
-          <Input
-            placeholder="Search by shop name or location..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-md"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm"
-          >
-            Search
-          </button>
-        </form>
+      <div className="page-frame py-8">
+        <div className="hero-panel mb-8 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-3">
+            <span className="section-kicker">Customer marketplace</span>
+            <h1 className="page-title">Discover trusted shops around you.</h1>
+            <p className="page-subtitle">Search by name or location, open a shop, and order in a flow that feels fast and familiar.</p>
+          </div>
+          <form onSubmit={handleSearch} className="flex w-full gap-2 lg:max-w-xl">
+            <div className="field-shell flex-1">
+              <Input
+                placeholder="Search by shop name or location..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+              />
+            </div>
+            <Button type="submit" className="shrink-0 px-6">
+              Search
+            </Button>
+          </form>
+        </div>
 
         {fetching ? (
-          <div className="text-gray-500 text-center py-12">Loading shops...</div>
+          <div className="hero-panel py-16 text-center text-slate-500">Loading shops...</div>
         ) : shops.length === 0 ? (
-          <div className="text-gray-500 text-center py-12">No shops found. Try a different search.</div>
+          <div className="hero-panel py-16 text-center">
+            <div className="text-4xl">🛍️</div>
+            <div className="mt-3 text-lg font-semibold text-slate-950">No shops found</div>
+            <div className="mt-1 text-sm text-slate-500">Try a different search or explore the seeded stores.</div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {shops.map((shop) => (
               <Link key={shop.id} href={`/customer/shop/${shop.id}`}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                  <CardHeader className="pb-2">
+                <Card className="h-full cursor-pointer border-white/70 bg-white/75 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_22px_50px_-24px_rgba(15,23,42,0.28)]">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg">{shop.name}</CardTitle>
-                      <Badge variant="secondary" className="text-xs">
+                      <CardTitle className="text-lg text-slate-950">{shop.name}</CardTitle>
+                      <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
                         {shop._count.products} items
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    {shop.description && (
-                      <p className="text-sm text-gray-500 mb-2">{shop.description}</p>
-                    )}
-                    <p className="text-sm text-gray-600">📍 {shop.address}</p>
-                    <p className="text-sm text-gray-600">🏙️ {shop.city} - {shop.pincode}</p>
-                    <p className="text-sm text-gray-600">📞 {shop.phone}</p>
-                    <p className="text-xs text-gray-400 mt-2">Owner: {shop.owner.name}</p>
+                    {shop.description && <p className="mb-3 text-sm leading-6 text-slate-600">{shop.description}</p>}
+                    <div className="space-y-1 text-sm text-slate-600">
+                      <p>📍 {shop.address}</p>
+                      <p>🏙️ {shop.city} - {shop.pincode}</p>
+                      <p>📞 {shop.phone}</p>
+                    </div>
+                    <div className="mt-4 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Owner: {shop.owner.name}</div>
                   </CardContent>
                 </Card>
               </Link>
