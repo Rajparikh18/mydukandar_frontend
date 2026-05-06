@@ -39,6 +39,7 @@ export default function ShopOwnerProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState({
     name: "",
     price: "",
@@ -97,6 +98,80 @@ export default function ShopOwnerProductsPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleUpdateProduct(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingProduct) return;
+    setFormError("");
+    setSubmitting(true);
+    try {
+      await api(`/api/products/${editingProduct.id}`, {
+        method: "PATCH",
+        token: token!,
+        body: JSON.stringify({
+          name: newProduct.name,
+          price: parseFloat(newProduct.price),
+          mrp: newProduct.mrp ? parseFloat(newProduct.mrp) : undefined,
+          unit: newProduct.unit,
+          category: newProduct.category,
+          quantity: parseInt(newProduct.quantity) || 0,
+        }),
+      });
+      setEditingProduct(null);
+      setNewProduct({ name: "", price: "", mrp: "", unit: "piece", category: "GROCERY", quantity: "10" });
+      setShowForm(false);
+      fetchProducts();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to update product");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleToggleStock(product: Product) {
+    try {
+      await api(`/api/products/${product.id}`, {
+        method: "PATCH",
+        token: token!,
+        body: JSON.stringify({ inStock: !product.inStock }),
+      });
+      fetchProducts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to toggle stock");
+    }
+  }
+
+  async function handleDeleteProduct(product: Product) {
+    if (!confirm(`Remove "${product.name}" from your catalog?`)) return;
+    try {
+      await api(`/api/products/${product.id}`, {
+        method: "DELETE",
+        token: token!,
+      });
+      fetchProducts();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to remove product");
+    }
+  }
+
+  function startEdit(product: Product) {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      price: String(product.price),
+      mrp: product.mrp ? String(product.mrp) : "",
+      unit: product.unit,
+      category: product.category,
+      quantity: String(product.quantity),
+    });
+    setShowForm(true);
+  }
+
+  function cancelEdit() {
+    setEditingProduct(null);
+    setNewProduct({ name: "", price: "", mrp: "", unit: "piece", category: "GROCERY", quantity: "10" });
+    setShowForm(false);
   }
 
   if (loading || fetching) {
@@ -180,15 +255,25 @@ export default function ShopOwnerProductsPage() {
             </div>
           </div>
 
-          <Button className="px-5" onClick={() => setShowForm(!showForm)}>
-            {showForm ? "Close editor" : "+ Add Product"}
+          <Button className="px-5" onClick={() => { cancelEdit(); setShowForm(!showForm); }}>
+            {showForm && !editingProduct ? "Close editor" : "+ Add Product"}
           </Button>
         </div>
 
         {showForm && (
           <Card className="metric-card mb-6">
             <CardContent className="p-5">
-              <form onSubmit={handleAddProduct} className="space-y-3">
+              <form onSubmit={editingProduct ? handleUpdateProduct : handleAddProduct} className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-slate-950">
+                    {editingProduct ? `Editing: ${editingProduct.name}` : "Add New Product"}
+                  </h3>
+                  {editingProduct && (
+                    <button type="button" onClick={cancelEdit} className="text-sm text-slate-500 hover:text-slate-700">
+                      Cancel edit
+                    </button>
+                  )}
+                </div>
                 {formError && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{formError}</div>}
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <div>
@@ -228,7 +313,9 @@ export default function ShopOwnerProductsPage() {
                   </div>
                 </div>
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? "Adding..." : "Add Product"}
+                  {submitting
+                    ? editingProduct ? "Updating..." : "Adding..."
+                    : editingProduct ? "Update Product" : "Add Product"}
                 </Button>
               </form>
             </CardContent>
@@ -261,7 +348,7 @@ export default function ShopOwnerProductsPage() {
                         className={`border-white/70 bg-white/75 transition-all duration-200 hover:-translate-y-1 ${index % 5 === 0 ? "md:col-span-2 xl:col-span-2" : ""}`}
                       >
                         <CardContent className="flex items-start justify-between gap-4 p-4">
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">SKU {index + 1}</div>
                             <p className="mt-2 text-sm font-medium text-slate-950">{product.name}</p>
                             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -271,9 +358,37 @@ export default function ShopOwnerProductsPage() {
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
                               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Stock {product.quantity}</span>
-                              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                              <span className={`rounded-full px-3 py-1 text-xs font-medium ${product.inStock ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>
                                 {product.inStock ? "Visible" : "Hidden"}
                               </span>
+                            </div>
+                            {/* Action buttons */}
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => startEdit(product)}
+                                className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-medium text-slate-600 transition hover:-translate-y-0.5 hover:bg-white"
+                              >
+                                ✏️ Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleStock(product)}
+                                className={`rounded-full border px-3 py-1 text-xs font-medium transition hover:-translate-y-0.5 ${
+                                  product.inStock
+                                    ? "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                                    : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                }`}
+                              >
+                                {product.inStock ? "🔒 Mark Out" : "✅ Mark In"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteProduct(product)}
+                                className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 transition hover:-translate-y-0.5 hover:bg-rose-100"
+                              >
+                                🗑️ Remove
+                              </button>
                             </div>
                           </div>
                           <Badge variant={product.inStock ? "secondary" : "destructive"} className={product.inStock ? "bg-emerald-50 text-emerald-700" : ""}>

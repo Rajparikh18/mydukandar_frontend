@@ -57,6 +57,7 @@ export default function ShopDetailPage() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   const [notes, setNotes] = useState("");
+  const [deliveryMode, setDeliveryMode] = useState<"SELF_PICKUP" | "DELIVERY">("SELF_PICKUP");
   const [ordering, setOrdering] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [showCart, setShowCart] = useState(false);
@@ -128,7 +129,7 @@ export default function ShopDetailPage() {
       await api("/api/orders", {
         method: "POST",
         token: token!,
-        body: JSON.stringify({ shopId, items, notes: notes || undefined }),
+        body: JSON.stringify({ shopId, items, notes: notes || undefined, deliveryMode }),
       });
 
       setCart(new Map());
@@ -281,6 +282,34 @@ export default function ShopDetailPage() {
                         <span className="text-slate-700">Total</span>
                         <span className="text-emerald-700">₹{getCartTotal()}</span>
                       </div>
+                      {/* Delivery mode selector */}
+                      <div className="mt-3">
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Fulfillment</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setDeliveryMode("SELF_PICKUP")}
+                            className={`rounded-xl border p-2 text-center text-xs font-semibold transition-all ${
+                              deliveryMode === "SELF_PICKUP"
+                                ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                                : "border-slate-200 bg-white/70 text-slate-500 hover:bg-white"
+                            }`}
+                          >
+                            🏪 Self Pickup
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeliveryMode("DELIVERY")}
+                            className={`rounded-xl border p-2 text-center text-xs font-semibold transition-all ${
+                              deliveryMode === "DELIVERY"
+                                ? "border-blue-300 bg-blue-50 text-blue-800"
+                                : "border-slate-200 bg-white/70 text-slate-500 hover:bg-white"
+                            }`}
+                          >
+                            🚚 Delivery
+                          </button>
+                        </div>
+                      </div>
                       <Textarea
                         placeholder="Any special notes for the shopkeeper..."
                         value={notes}
@@ -327,6 +356,34 @@ export default function ShopDetailPage() {
                     </div>
                   ))}
                   <Separator className="my-3" />
+                  {/* Delivery mode selector - mobile */}
+                  <div className="mb-3">
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Fulfillment</div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMode("SELF_PICKUP")}
+                        className={`rounded-xl border p-2 text-center text-xs font-semibold transition-all ${
+                          deliveryMode === "SELF_PICKUP"
+                            ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                            : "border-slate-200 bg-white/70 text-slate-500"
+                        }`}
+                      >
+                        🏪 Self Pickup
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeliveryMode("DELIVERY")}
+                        className={`rounded-xl border p-2 text-center text-xs font-semibold transition-all ${
+                          deliveryMode === "DELIVERY"
+                            ? "border-blue-300 bg-blue-50 text-blue-800"
+                            : "border-slate-200 bg-white/70 text-slate-500"
+                        }`}
+                      >
+                        🚚 Delivery
+                      </button>
+                    </div>
+                  </div>
                   <Textarea
                     placeholder="Any special notes..."
                     value={notes}

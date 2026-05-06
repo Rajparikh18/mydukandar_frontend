@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 
 interface ShopDetails {
@@ -51,6 +54,32 @@ export default function ShopOwnerDashboard() {
   const [balances, setBalances] = useState<BalanceSummary[]>([]);
   const [customerConnections, setCustomerConnections] = useState<BalanceSummary[]>([]);
   const [fetching, setFetching] = useState(true);
+
+  // Notification state
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifMessage, setNotifMessage] = useState("");
+  const [notifSending, setNotifSending] = useState(false);
+  const [notifResult, setNotifResult] = useState("");
+
+  async function handleSendNotification() {
+    if (!notifTitle.trim() || !notifMessage.trim()) return;
+    setNotifSending(true);
+    setNotifResult("");
+    try {
+      const data = await api<{ message: string; sentCount: number }>("/api/notifications/send", {
+        method: "POST",
+        token: token!,
+        body: JSON.stringify({ title: notifTitle, message: notifMessage }),
+      });
+      setNotifResult(`✅ ${data.message}`);
+      setNotifTitle("");
+      setNotifMessage("");
+    } catch (err) {
+      setNotifResult(`❌ ${err instanceof Error ? err.message : "Failed to send"}`);
+    } finally {
+      setNotifSending(false);
+    }
+  }
 
   useEffect(() => {
     if (loading) return;
@@ -202,7 +231,47 @@ export default function ShopOwnerDashboard() {
               </CardContent>
             </Card>
           </Link>
+          <Link href="/shop-owner/setup">
+            <Card className="cursor-pointer border-white/70 bg-white/75 transition-all duration-200 hover:-translate-y-1">
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-3xl">⚙️</div>
+                <div>
+                  <p className="text-lg font-semibold text-slate-950">Edit Shop Profile</p>
+                  <p className="text-sm text-slate-500">Update your shop name, address, and details</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
+
+        {/* Send Notification Section */}
+        <Card className="mt-8 border-white/70 bg-white/75">
+          <CardHeader>
+            <CardTitle className="text-lg text-slate-950">📢 Send Offer / Reminder</CardTitle>
+            <p className="text-sm text-slate-500">Push a notification to all your connected customers</p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              placeholder="Notification title (e.g. Weekend Sale!)"
+              value={notifTitle}
+              onChange={(e) => setNotifTitle(e.target.value)}
+            />
+            <Textarea
+              placeholder="Message body (e.g. Get 20% off on all groceries this weekend!)"
+              value={notifMessage}
+              onChange={(e) => setNotifMessage(e.target.value)}
+              rows={2}
+            />
+            {notifResult && (
+              <div className={`rounded-2xl px-4 py-3 text-sm ${notifResult.startsWith("✅") ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-rose-200 bg-rose-50 text-rose-700"}`}>
+                {notifResult}
+              </div>
+            )}
+            <Button onClick={handleSendNotification} disabled={notifSending || !notifTitle.trim() || !notifMessage.trim()}>
+              {notifSending ? "Sending..." : "Send to All Customers"}
+            </Button>
+          </CardContent>
+        </Card>
 
         <div className="mt-8 grid grid-cols-1 gap-4 xl:grid-cols-2">
           <Card className="border-white/70 bg-white/75">

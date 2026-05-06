@@ -21,6 +21,8 @@ interface Order {
   status: string;
   totalAmount: number;
   notes: string | null;
+  isPaid: boolean;
+  deliveryMode: "SELF_PICKUP" | "DELIVERY";
   createdAt: string;
   items: OrderItem[];
   customer: { name: string; phone: string | null };
@@ -206,6 +208,9 @@ export default function ShopOwnerOrdersPage() {
                           <Badge className={statusColors[order.status]}>{statusLabels[order.status] || order.status}</Badge>
                           <Badge variant={order.isPaid ? "secondary" : "destructive"} className={order.isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}>
                             {order.isPaid ? "Paid" : "Unpaid"}
+                          </Badge>
+                          <Badge className={order.deliveryMode === "DELIVERY" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}>
+                            {order.deliveryMode === "DELIVERY" ? "🚚 Delivery" : "🏪 Pickup"}
                           </Badge>
                         </div>
                       </div>

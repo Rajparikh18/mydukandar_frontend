@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface OrderItem {
   id: string;
@@ -20,6 +21,7 @@ interface Order {
   status: string;
   totalAmount: number;
   notes: string | null;
+  isPaid: boolean;
   createdAt: string;
   items: OrderItem[];
   shop: { name: string; address: string };
@@ -48,6 +50,7 @@ export default function CustomerOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [fetching, setFetching] = useState(true);
+  const [filter, setFilter] = useState<"active" | "past" | "all">("active");
 
   useEffect(() => {
     if (loading) return;
@@ -69,6 +72,28 @@ export default function CustomerOrdersPage() {
     }
   }
 
+  async function cancelOrder(orderId: string) {
+    try {
+      await api(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        token: token!,
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+      fetchOrders();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to cancel order");
+    }
+  }
+
+  const filteredOrders = orders.filter((order) => {
+    if (filter === "active") return ["PENDING", "ACCEPTED", "PACKING", "READY"].includes(order.status);
+    if (filter === "past") return ["PICKED_UP", "CANCELLED"].includes(order.status);
+    return true;
+  });
+
+  const activeCount = orders.filter((o) => ["PENDING", "ACCEPTED", "PACKING", "READY"].includes(o.status)).length;
+  const pastCount = orders.filter((o) => ["PICKED_UP", "CANCELLED"].includes(o.status)).length;
+
   if (loading) {
     return <div className="page-frame flex min-h-screen items-center justify-center text-slate-500">Loading...</div>;
   }
@@ -83,21 +108,48 @@ export default function CustomerOrdersPage() {
           <p className="page-subtitle">Track the progress of every order from acceptance to pickup.</p>
         </div>
 
+        {/* Filter tabs */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {[
+            { key: "active" as const, label: "Active", count: activeCount },
+            { key: "past" as const, label: "Past", count: pastCount },
+            { key: "all" as const, label: "All", count: orders.length },
+          ].map((option) => (
+            <button
+              key={option.key}
+              onClick={() => setFilter(option.key)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                filter === option.key
+                  ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/20"
+                  : "border border-slate-200 bg-white/80 text-slate-600 hover:-translate-y-0.5 hover:bg-white"
+              }`}
+            >
+              {option.label} <span className="ml-1 text-xs opacity-70">({option.count})</span>
+            </button>
+          ))}
+        </div>
+
         {fetching ? (
           <div className="hero-panel py-16 text-center text-slate-500">Loading orders...</div>
-        ) : orders.length === 0 ? (
+        ) : filteredOrders.length === 0 ? (
           <div className="hero-panel py-16 text-center">
-            <p className="mb-4 text-slate-500">No orders yet</p>
+            <div className="text-4xl">📦</div>
+            <p className="mt-3 text-lg font-semibold text-slate-950">
+              {filter === "active" ? "No active orders" : filter === "past" ? "No past orders" : "No orders yet"}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {filter === "active" ? "All caught up! Browse shops to place a new order." : "Place your first order to get started."}
+            </p>
             <button
               onClick={() => router.push("/customer")}
-              className="rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5"
+              className="mt-4 rounded-full bg-emerald-600 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:-translate-y-0.5"
             >
-              Browse shops and place your first order
+              Browse shops
             </button>
           </div>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <Card key={order.id} className="border-white/70 bg-white/75">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -107,9 +159,17 @@ export default function CustomerOrdersPage() {
                         {new Date(order.createdAt).toLocaleString("en-IN")}
                       </p>
                     </div>
-                    <Badge className={statusColors[order.status]}>
-                      {statusLabels[order.status] || order.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge className={statusColors[order.status]}>
+                        {statusLabels[order.status] || order.status}
+                      </Badge>
+                      <Badge
+                        variant={order.isPaid ? "secondary" : "destructive"}
+                        className={order.isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}
+                      >
+                        {order.isPaid ? "Paid" : "Unpaid"}
+                      </Badge>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -130,6 +190,19 @@ export default function CustomerOrdersPage() {
                     <span className="text-sm font-medium text-slate-600">Total</span>
                     <span className="font-bold text-emerald-700">₹{order.totalAmount}</span>
                   </div>
+                  {/* Cancel button for pending orders */}
+                  {order.status === "PENDING" && (
+                    <div className="mt-3 flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-rose-200 bg-white/80 text-rose-700 hover:bg-rose-50"
+                        onClick={() => cancelOrder(order.id)}
+                      >
+                        Cancel Order
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
