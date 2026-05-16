@@ -28,6 +28,7 @@ export default function Navbar() {
   const ownerLinks = [
     { href: "/shop-owner", label: "Dashboard" },
     { href: "/shop-owner/orders", label: "Orders" },
+    { href: "/shop-owner/customers", label: "Customers" },
     { href: "/shop-owner/products", label: "Products" },
     { href: "/shop-owner/payments", label: "Payments" },
     { href: "/shop-owner/analytics", label: "Analytics" },

@@ -154,6 +154,17 @@ export default function ShopOwnerPaymentsPage() {
     }
   }, [customerId, customers]);
 
+  function handleCustomerSelect(id: string) {
+    setCustomerId(id);
+    setOrderId("");
+    const bal = balances.find((b) => b.customerId === id)?.balance || 0;
+    if (bal > 0) {
+      setAmount(bal.toString());
+    } else {
+      setAmount("");
+    }
+  }
+
   if (!loading && (!user || user.role !== "SHOP_OWNER")) {
     return <div className="page-frame py-20 text-center">Please login as a shop owner to access this page.</div>;
   }
@@ -282,7 +293,7 @@ export default function ShopOwnerPaymentsPage() {
                     <button
                       key={customer.id}
                       type="button"
-                      onClick={() => setCustomerId(customer.id)}
+                      onClick={() => handleCustomerSelect(customer.id)}
                       className={`w-full rounded-[1.5rem] border p-4 text-left transition-all duration-200 ${
                         active
                           ? "border-emerald-300 bg-emerald-50 shadow-[0_18px_40px_-24px_rgba(16,185,129,0.5)]"
@@ -339,10 +350,7 @@ export default function ShopOwnerPaymentsPage() {
                       id="customer"
                       className="h-11 w-full rounded-2xl border border-slate-200/80 bg-white/85 px-4 shadow-sm outline-none"
                       value={customerId}
-                      onChange={(e) => {
-                        setCustomerId(e.target.value);
-                        setOrderId("");
-                      }}
+                      onChange={(e) => handleCustomerSelect(e.target.value)}
                       required
                     >
                       <option value="">Select customer</option>
@@ -382,8 +390,14 @@ export default function ShopOwnerPaymentsPage() {
                     <Label htmlFor="note">Note (optional)</Label>
                     <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} />
                   </div>
-                  <div className="rounded-2xl border border-slate-200/80 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                    Current customer balance: <span className={`font-semibold ${selectedBalance > 0 ? "text-amber-700" : "text-emerald-700"}`}>₹{selectedBalance.toFixed(2)}</span>
+                  <div className={`rounded-2xl border px-4 py-3 text-sm ${selectedBalance > 0 ? "border-amber-200 bg-amber-50 text-amber-800" : selectedBalance < 0 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-slate-50 text-slate-600"}`}>
+                    {selectedBalance > 0 ? (
+                      <>This customer has <strong>₹{selectedBalance.toFixed(2)} in pending dues</strong>.</>
+                    ) : selectedBalance < 0 ? (
+                      <>This customer has an excess <strong>wallet balance of ₹{Math.abs(selectedBalance).toFixed(2)}</strong>.</>
+                    ) : (
+                      <>This customer has <strong>no pending dues</strong>.</>
+                    )}
                   </div>
                   {method === "UDHAAR" && (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">

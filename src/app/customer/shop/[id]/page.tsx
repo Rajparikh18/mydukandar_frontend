@@ -58,6 +58,7 @@ export default function ShopDetailPage() {
   const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   const [notes, setNotes] = useState("");
   const [deliveryMode, setDeliveryMode] = useState<"SELF_PICKUP" | "DELIVERY">("SELF_PICKUP");
+  const [paymentMode, setPaymentMode] = useState<"CASH" | "ONLINE" | "UDHAAR">("CASH");
   const [ordering, setOrdering] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [showCart, setShowCart] = useState(false);
@@ -129,7 +130,7 @@ export default function ShopDetailPage() {
       await api("/api/orders", {
         method: "POST",
         token: token!,
-        body: JSON.stringify({ shopId, items, notes: notes || undefined, deliveryMode }),
+        body: JSON.stringify({ shopId, items, notes: notes || undefined, deliveryMode, paymentMode }),
       });
 
       setCart(new Map());
@@ -310,6 +311,28 @@ export default function ShopDetailPage() {
                           </button>
                         </div>
                       </div>
+
+                      {/* Payment mode selector */}
+                      <div className="mt-3">
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Payment</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {["CASH", "ONLINE", "UDHAAR"].map((mode) => (
+                            <button
+                              key={mode}
+                              type="button"
+                              onClick={() => setPaymentMode(mode as any)}
+                              className={`rounded-xl border p-2 text-center text-xs font-semibold transition-all ${
+                                paymentMode === mode
+                                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                                  : "border-slate-200 bg-white/70 text-slate-500 hover:bg-white"
+                              }`}
+                            >
+                              {mode === "CASH" ? "💵" : mode === "ONLINE" ? "📱" : "📒"} {mode}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
                       <Textarea
                         placeholder="Any special notes for the shopkeeper..."
                         value={notes}
@@ -384,6 +407,28 @@ export default function ShopDetailPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Payment mode selector - mobile */}
+                  <div className="mb-3">
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Payment</div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {["CASH", "ONLINE", "UDHAAR"].map((mode) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => setPaymentMode(mode as any)}
+                          className={`rounded-xl border p-2 text-center text-xs font-semibold transition-all ${
+                            paymentMode === mode
+                              ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                              : "border-slate-200 bg-white/70 text-slate-500"
+                          }`}
+                        >
+                          {mode === "CASH" ? "💵" : mode === "ONLINE" ? "📱" : "📒"} {mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <Textarea
                     placeholder="Any special notes..."
                     value={notes}

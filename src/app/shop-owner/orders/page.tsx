@@ -22,10 +22,12 @@ interface Order {
   totalAmount: number;
   notes: string | null;
   isPaid: boolean;
+  paymentMode: "CASH" | "ONLINE" | "UDHAAR";
   deliveryMode: "SELF_PICKUP" | "DELIVERY";
+  payments: { amount: number }[];
   createdAt: string;
   items: OrderItem[];
-  customer: { name: string; phone: string | null };
+  customer: { id: string; name: string; phone: string | null };
   shop: { name: string };
 }
 
@@ -61,6 +63,14 @@ export default function ShopOwnerOrdersPage() {
   const [fetching, setFetching] = useState(true);
   const [filter, setFilter] = useState<string>("active");
   const [selectedOrderId, setSelectedOrderId] = useState<string>("");
+  const [paymentModalState, setPaymentModalState] = useState<{
+    isOpen: boolean;
+    orderId: string;
+    customerId: string;
+    maxAmount: number;
+    amount: string;
+    method: string;
+  }>({ isOpen: false, orderId: "", customerId: "", maxAmount: 0, amount: "", method: "" });
 
   useEffect(() => {
     if (loading) return;
@@ -92,6 +102,25 @@ export default function ShopOwnerOrdersPage() {
       fetchOrders();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update order");
+    }
+  }
+
+  async function collectPayment(orderId: string, customerId: string, amount: number, method: string) {
+    try {
+      await api("/api/payments", {
+        method: "POST",
+        token: token!,
+        body: JSON.stringify({
+          amount,
+          method,
+          orderId,
+          customerId,
+          note: "Payment collected for order",
+        }),
+      });
+      fetchOrders();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to collect payment");
     }
   }
 
@@ -206,9 +235,11 @@ export default function ShopOwnerOrdersPage() {
                         </div>
                         <div className="flex flex-col items-end gap-2">
                           <Badge className={statusColors[order.status]}>{statusLabels[order.status] || order.status}</Badge>
-                          <Badge variant={order.isPaid ? "secondary" : "destructive"} className={order.isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}>
-                            {order.isPaid ? "Paid" : "Unpaid"}
-                          </Badge>
+                          <div className="flex gap-1">
+                            <Badge variant={order.isPaid ? "secondary" : "destructive"} className={order.isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}>
+                              {order.paymentMode}
+                            </Badge>
+                          </div>
                           <Badge className={order.deliveryMode === "DELIVERY" ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-600"}>
                             {order.deliveryMode === "DELIVERY" ? "🚚 Delivery" : "🏪 Pickup"}
                           </Badge>
@@ -261,7 +292,7 @@ export default function ShopOwnerOrdersPage() {
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Badge className={statusColors[selectedOrder.status]}>{statusLabels[selectedOrder.status] || selectedOrder.status}</Badge>
                         <Badge variant={selectedOrder.isPaid ? "secondary" : "destructive"} className={selectedOrder.isPaid ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}>
-                          {selectedOrder.isPaid ? "Paid" : "Unpaid"}
+                          {selectedOrder.paymentMode} {selectedOrder.isPaid ? "(Paid)" : "(Unpaid)"}
                         </Badge>
                       </div>
                     </div>
@@ -280,10 +311,18 @@ export default function ShopOwnerOrdersPage() {
 
                     <div className="rounded-2xl border border-slate-200/80 bg-white p-4 text-sm text-slate-600">
                       <div className="flex justify-between">
-                        <span>Total</span>
+                        <span>Total Amount</span>
                         <span className="font-semibold text-slate-950">₹{selectedOrder.totalAmount}</span>
                       </div>
-                      <div className="mt-2 flex justify-between">
+                      <div className="mt-2 flex justify-between border-t border-slate-200/80 pt-2">
+                        <span>Paid Amount</span>
+                        <span className="font-semibold text-emerald-700">₹{selectedOrder.payments?.reduce((sum, p) => sum + p.amount, 0) || 0}</span>
+                      </div>
+                      <div className="mt-2 flex justify-between border-t border-slate-200/80 pt-2">
+                        <span>Dues Remaining</span>
+                        <span className="font-semibold text-amber-600">₹{selectedOrder.totalAmount - (selectedOrder.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)}</span>
+                      </div>
+                      <div className="mt-4 flex justify-between">
                         <span>Created</span>
                         <span>{new Date(selectedOrder.createdAt).toLocaleString("en-IN")}</span>
                       </div>
@@ -296,6 +335,28 @@ export default function ShopOwnerOrdersPage() {
                           {nextStatusMap[selectedOrder.status].label}
                         </Button>
                       )}
+                      
+                      {!selectedOrder.isPaid && (
+                        <Button 
+                          variant="secondary" 
+                          className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200" 
+                          onClick={() => {
+                            const dues = selectedOrder.totalAmount - (selectedOrder.payments?.reduce((sum, p) => sum + p.amount, 0) || 0);
+                            const method = selectedOrder.paymentMode === "UDHAAR" ? "CASH" : selectedOrder.paymentMode;
+                            setPaymentModalState({
+                              isOpen: true,
+                              orderId: selectedOrder.id,
+                              customerId: selectedOrder.customer.id,
+                              maxAmount: dues,
+                              amount: dues.toString(),
+                              method,
+                            });
+                          }}
+                        >
+                          Collect Payment (₹{selectedOrder.totalAmount - (selectedOrder.payments?.reduce((sum, p) => sum + p.amount, 0) || 0)})
+                        </Button>
+                      )}
+
                       {selectedOrder.status === "PENDING" && (
                         <Button variant="outline" className="border-rose-200 bg-white/80 text-rose-700 hover:bg-rose-50" onClick={() => updateStatus(selectedOrder.id, "CANCELLED")}>Cancel order</Button>
                       )}
@@ -309,6 +370,51 @@ export default function ShopOwnerOrdersPage() {
           </div>
         )}
       </div>
+
+      {paymentModalState.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <Card className="w-full max-w-sm animate-in zoom-in-95 duration-200">
+            <CardHeader>
+              <CardTitle>Collect Payment</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">Amount Received (₹)</label>
+                  <input
+                    type="number"
+                    value={paymentModalState.amount}
+                    onChange={(e) => setPaymentModalState({ ...paymentModalState, amount: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                    placeholder={`Max: ₹${paymentModalState.maxAmount}`}
+                    autoFocus
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Maximum collectable: ₹{paymentModalState.maxAmount}</p>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setPaymentModalState({ ...paymentModalState, isOpen: false })}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => {
+                      const amount = parseFloat(paymentModalState.amount);
+                      if (isNaN(amount) || amount <= 0 || amount > paymentModalState.maxAmount) {
+                        alert(`Invalid amount entered. Must be between 1 and ${paymentModalState.maxAmount}`);
+                        return;
+                      }
+                      collectPayment(paymentModalState.orderId, paymentModalState.customerId, amount, paymentModalState.method);
+                      setPaymentModalState({ ...paymentModalState, isOpen: false });
+                    }}
+                  >
+                    Confirm Payment
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

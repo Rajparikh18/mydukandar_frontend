@@ -137,7 +137,7 @@ export default function ShopOwnerDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-8">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 mb-8">
           <Card className="metric-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-emerald-700">Total Products</CardTitle>
@@ -154,17 +154,10 @@ export default function ShopOwnerDashboard() {
               <p className="text-3xl font-semibold text-slate-950">{shopDetails?._count.orders || 0}</p>
             </CardContent>
           </Card>
-          <Card className="metric-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-orange-700">Active Orders</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-semibold text-slate-950">{recentOrders.length}</p>
-            </CardContent>
-          </Card>
+
         </div>
 
-        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3 xl:grid-cols-3">
           <Card className="metric-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-violet-700">Customers</CardTitle>
@@ -183,15 +176,7 @@ export default function ShopOwnerDashboard() {
               <p className="mt-1 text-xs text-slate-500">Awaiting action now</p>
             </CardContent>
           </Card>
-          <Card className="metric-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-rose-700">Customers Owing</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-semibold text-slate-950">{balances.length}</p>
-              <p className="mt-1 text-xs text-slate-500">Need follow-up</p>
-            </CardContent>
-          </Card>
+
           <Card className="metric-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-blue-700">Collected</CardTitle>
